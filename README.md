@@ -123,8 +123,6 @@ streamlit run app.py
 
 ### For Administrators
 
-![Admin Panel Overview](images/admin-panel.png)
-
 #### 1. **Advanced Application Management**
 Navigate to **Admin Panel → Manage Apps**
 
