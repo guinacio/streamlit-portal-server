@@ -1,0 +1,133 @@
+# Streamlit Portal Development Rules
+
+## Code Editing Guidelines
+
+### CRITICAL: Multi-line Edit Prevention
+- **NEVER use `search_replace` tool for multi-line code changes**
+- **ALWAYS use `edit_file` tool for any edit involving more than 1 line**
+- When modifying imports, function definitions, or code blocks spanning multiple lines, use `edit_file`
+- Single-line changes only: use `search_replace`
+- If corruption occurs (lines get squashed together), immediately recreate the file using `edit_file`
+
+### File Encoding Standards
+- Maintain UTF-8 encoding without BOM
+- Use consistent line endings (LF for Unix-style)
+- Preserve proper indentation (4 spaces for Python)
+- Never mix tabs and spaces
+
+## Technology Stack Guidelines
+
+### Streamlit Application
+- Use Streamlit 1.45+ features and syntax
+- Implement `st.cache_data` for performance optimization
+- Use `st.rerun()` instead of deprecated `st.experimental_rerun()`
+- Apply custom CSS using `st.html()` for styling
+
+### Database Operations
+- Use SQLite with proper connection management
+- Implement proper error handling for database operations
+- Close connections appropriately
+- Use parameterized queries to prevent SQL injection
+
+### Port Management
+- Default portal runs on port 8501
+- Scan range: 8502-8600 for unregistered apps
+- Use multithreading for port scanning (max 50 workers)
+- Implement proper timeout handling (0.1s for socket, 0.5s for HTTP)
+- Cache port scan results for 1 minute
+
+### UI/UX Standards
+- Use modern card-based layouts
+- Implement responsive design with CSS Grid/Flexbox
+- Apply gradient backgrounds and subtle shadows
+- Use consistent color scheme (blues, purples, greens)
+- Include loading spinners and status indicators
+
+## Code Quality Standards
+
+### Python Best Practices
+- Follow PEP 8 style guidelines
+- Use type hints for function parameters and return values
+- Implement proper error handling with try/except blocks
+- Use descriptive variable and function names
+- Add docstrings for all functions and classes
+
+### Performance Optimization
+- Cache expensive operations using `@st.cache_data`
+- Use appropriate TTL values (30s for port checks, 60s for scans)
+- Implement lazy loading for large datasets
+- Minimize database queries through efficient data structures
+
+### Security Considerations
+- Hash passwords using bcrypt
+- Validate all user inputs
+- Implement proper session management
+- Use parameterized database queries
+- Sanitize file uploads and paths
+
+## Project Structure
+
+### File Organization
+```
+streamlit-server/
+├── app.py              # Main Streamlit application
+├── database.py         # Database operations and models
+├── utils.py           # Utility functions and helpers
+├── .cursorrules       # This file - AI behavior rules
+├── requirements.txt   # Python dependencies
+├── app_images/        # Uploaded application images
+└── portal.db         # SQLite database file
+```
+
+### Function Organization
+- Keep functions focused and single-purpose
+- Separate UI logic from business logic
+- Use clear parameter and return type annotations
+- Implement proper error handling at function level
+
+## Development Workflow
+
+### Testing Changes
+- Test single-line edits with `search_replace`
+- Test multi-line edits with `edit_file`
+- Verify port scanning functionality manually
+- Check database operations for data integrity
+- Validate UI responsiveness across different screen sizes
+
+### Code Review Checklist
+- Verify proper indentation and formatting
+- Check for SQL injection vulnerabilities
+- Ensure error handling is implemented
+- Validate input sanitization
+- Test caching mechanisms
+
+## Error Prevention
+
+### Common Issues to Avoid
+- Never mix editing tools (stick to `edit_file` for multi-line)
+- Don't forget to close database connections
+- Avoid hardcoded paths or ports
+- Don't skip input validation
+- Never commit database files or sensitive configs
+
+### Recovery Procedures
+- If file corruption occurs: delete and recreate with `edit_file`
+- For database issues: check connection handling and query syntax
+- For port conflicts: verify port availability before assignment
+- For UI problems: validate CSS syntax and Streamlit compatibility
+
+## AI Assistant Behavior
+
+### Response Style
+- Provide clear, actionable solutions
+- Include code examples when helpful
+- Explain the reasoning behind technical decisions
+- Highlight potential issues or edge cases
+- Suggest improvements for performance and security
+
+### Code Generation Preferences
+- Generate complete, runnable code
+- Include proper error handling
+- Add helpful comments for complex logic
+- Use consistent coding style throughout
+- Implement security best practices by default 
