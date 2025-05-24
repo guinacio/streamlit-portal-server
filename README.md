@@ -1,17 +1,17 @@
-# 🚀 Streamlit Portal
+# Streamlit Portal Server
 
-A comprehensive, production-ready Streamlit application portal with advanced authentication, full user management, automated app discovery, and modern UI design. This portal provides a centralized, secure interface to manage and access multiple Streamlit applications running on your server.
+A comprehensive, production-ready server solution that transforms your Streamlit deployment into a powerful portal with advanced authentication, full user management, automated app discovery, and modern UI design. Perfect for enterprise environments running multiple Streamlit applications.
 
-## ✨ Key Features
+## Key Features
 
-### 🔐 Advanced Authentication & Security
+### Advanced Authentication & Security
 - **Secure user login/logout** with bcrypt password hashing
 - **Role-based access control** (Admin/User roles)
 - **Session management** with automatic timeout
 - **Group-based permissions** for granular access control
 - **Protected user accounts** (prevent deletion of admin/current user)
 
-### 👥 Complete User Management
+### Complete User Management
 - **Full CRUD operations** - Create, Read, Update, Delete users
 - **Smart user editing** with form pre-population
 - **Flexible user information** (username, full name, email, role)
@@ -20,7 +20,7 @@ A comprehensive, production-ready Streamlit application portal with advanced aut
 - **Safety protections** against accidental admin deletion
 - **Password management** with optional password updates
 
-### 📱 Advanced Application Management
+### Advanced Application Management
 - **Auto-discovery** of running Streamlit applications
 - **Full app lifecycle** - Create, edit, delete, monitor
 - **Rich app metadata** (name, description, category, custom images)
@@ -29,7 +29,7 @@ A comprehensive, production-ready Streamlit application portal with advanced aut
 - **Category-based organization** with filtering
 - **Image upload support** with automatic resizing and optimization
 
-### 🔍 Smart App Discovery
+### Smart App Discovery
 - **Automated port scanning** with multithreaded performance
 - **HTTP verification** to confirm Streamlit applications
 - **Cache management** (1-minute TTL) for optimal performance  
@@ -37,7 +37,7 @@ A comprehensive, production-ready Streamlit application portal with advanced aut
 - **Direct launch buttons** for unregistered apps
 - **Scan statistics** and status reporting
 
-### 🎨 Modern UI/UX Design
+### Modern UI/UX Design
 - **Professional mature theme** with dark blue-gray color scheme
 - **Minimal border radius** (4px) for contemporary look
 - **Responsive card-based layouts** with CSS Grid/Flexbox
@@ -46,21 +46,22 @@ A comprehensive, production-ready Streamlit application portal with advanced aut
 - **Hover effects and smooth transitions**
 - **Status indicators** (🟢 Running, 🔴 Offline, 🟢 Active, 🔴 Inactive)
 
-### 🔒 Granular Permission System
+### Granular Permission System
 - **Group-based access control** with flexible group assignment
 - **Per-application permissions** configuration
+- **🌐 Public Access** - Apps accessible to all users without group restrictions
 - **Admin oversight capabilities** with full system access
 - **Automatic permission inheritance** for new users
 - **Visual permission management** interface
 
-### ⚡ Performance Optimizations
+### Performance Optimizations
 - **Intelligent caching** with `@st.cache_data` decorators
 - **Optimized port checking** (30-second TTL for status, 60-second TTL for scans)
 - **Multithreaded port scanning** (max 50 workers) with timeout handling
 - **Selective port monitoring** (only check accessible apps per user)
 - **Lazy loading** for large datasets and images
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - **Python 3.8+**
@@ -68,24 +69,47 @@ A comprehensive, production-ready Streamlit application portal with advanced aut
 
 ### Installation
 
-1. **Clone or download the project**:
+**Recommended: Using UV (Fast & Modern)**
+
+1. **Install UV** (if not already installed):
    ```bash
-   git clone <your-repo-url>
-   cd streamlit-server
+   # On Windows
+   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+   
+   # On macOS/Linux
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-2. **Install dependencies**:
+2. **Clone the repository**:
    ```bash
-   pip install -r requirements.txt
+   git clone https://github.com/guinacio/streamlit-portal-server.git
+   cd streamlit-portal-server
    ```
 
-3. **Run the portal**:
+3. **Install dependencies with UV**:
    ```bash
-   streamlit run app.py
+   uv sync
    ```
 
-4. **Access the portal**:
+4. **Run the portal**:
+   ```bash
+   uv run streamlit run app.py
+   ```
+
+5. **Access the portal**:
    Open your browser and navigate to `http://localhost:8501`
+
+**Alternative: Using pip**
+
+If you prefer using pip or don't want to install UV:
+
+```bash
+# After cloning the repository
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+> **💡 Why UV?** UV is significantly faster than pip, has better dependency resolution, and provides more reliable virtual environment management. It's the modern choice for Python package management.
 
 ### Default Admin Credentials
 - **Username**: `admin`
@@ -93,12 +117,18 @@ A comprehensive, production-ready Streamlit application portal with advanced aut
 
 ⚠️ **Security Notice**: Change the default admin password immediately after first login!
 
-## 📖 Comprehensive Usage Guide
+![Login Screen](images/login-screen.png)
+
+## Comprehensive Usage Guide
 
 ### For Administrators
 
+![Admin Panel Overview](images/admin-panel.png)
+
 #### 1. **Advanced Application Management**
 Navigate to **Admin Panel → Manage Apps**
+
+![App Management](images/app-management.png)
 
 **Adding/Editing Applications:**
 - Select "Create New App" or choose existing app from dropdown
@@ -123,6 +153,8 @@ Navigate to **Admin Panel → Manage Apps**
 #### 2. **Complete User Management**
 Navigate to **Admin Panel → Manage Users**
 
+![User Management](images/user-management.png)
+
 **Creating/Editing Users:**
 - Select "Create New User" or choose existing user from dropdown
 - Configure username (locked when editing), full name, email
@@ -146,6 +178,8 @@ Navigate to **Admin Panel → Manage Users**
 #### 3. **Permission Management**
 Navigate to **Admin Panel → Groups & Permissions**
 
+![Permission Management](images/permissions.png)
+
 **Setting App Permissions:**
 - Select application from dropdown
 - Choose which user groups can access the app
@@ -167,6 +201,8 @@ Navigate to **Admin Panel → Groups & Permissions**
 
 ### For Users
 
+![User Dashboard](images/user-dashboard.png)
+
 #### 1. **Accessing Applications**
 - **Dashboard View**: See all applications you have permission to access
 - **Smart Filtering**: Search by name, description, or category
@@ -185,11 +221,13 @@ Navigate to **Admin Panel → Groups & Permissions**
 - **Performance Optimized**: Fast loading with intelligent caching
 - **Modern Interface**: Professional design with smooth interactions
 
-## 🛠️ Configuration & Customization
+## Architecture
+
+## Configuration & Customization
 
 ### File Structure
 ```
-streamlit-server/
+streamlit-portal-server/
 ├── app.py                    # Main Streamlit application
 ├── database.py              # Database operations and models  
 ├── utils.py                 # Utility functions and helpers
@@ -210,7 +248,6 @@ streamlit-server/
 
 ### Theme Customization
 The portal uses a custom theme defined in `.streamlit/config.toml`:
-Create this file to have a custom theme
 
 ```toml
 [theme]
@@ -236,10 +273,12 @@ category = st.selectbox("Category",
     ["General", "Analytics", "ML/AI", "Dashboard", "Tools", "Games", "Your-Category"])
 ```
 
-## 🧪 Development & Testing
+## Development & Testing
 
 ### Running Multiple Test Apps
 Test the portal with multiple Streamlit applications:
+
+![Multi-App Setup](images/multi-app-setup.png)
 
 1. **Create test applications**:
    ```bash
@@ -283,7 +322,9 @@ The project includes `.cursorrules` file with comprehensive development guidelin
 - **Performance**: Caching strategies, efficient database queries
 - **Security**: Input validation, SQL injection prevention
 
-## 🔒 Security Best Practices
+## Security Best Practices
+
+![Security Features](images/security-overview.png)
 
 ### Authentication Security
 - **bcrypt password hashing** with salt for secure storage
@@ -302,7 +343,7 @@ The project includes `.cursorrules` file with comprehensive development guidelin
 - **Path sanitization** prevents directory traversal
 - **Secure file storage** in designated directories
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues & Solutions
 
@@ -342,9 +383,11 @@ The project includes `.cursorrules` file with comprehensive development guidelin
    - Check for JavaScript console errors
    - Ensure Streamlit version supports theme features
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Here's how to get involved:
+
+![Contributing Guide](images/contributing.png)
 
 ### Reporting Issues
 - Use GitHub Issues with detailed reproduction steps
@@ -362,11 +405,11 @@ We welcome contributions! Here's how to get involved:
 - Update documentation for changes
 - Use consistent code style and commenting
 
-## 📄 License
+## License
 
 This project is open source and available under the **MIT License**.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built with these amazing technologies:
 
@@ -376,10 +419,3 @@ Built with these amazing technologies:
 - **[Pillow](https://python-pillow.org/)** - Python image processing library
 - **[pandas](https://pandas.pydata.org/)** - Data manipulation and analysis
 
----
-
-## 🎯 What's Next?
-
-Ready to explore some exciting new features? Check out our **[Feature Suggestions](#feature-suggestions)** section below!
-
-**Happy coding! 🚀**

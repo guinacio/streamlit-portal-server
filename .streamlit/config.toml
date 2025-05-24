@@ -1,0 +1,54 @@
+[theme]
+# Base theme (light/dark) - using light as our base
+base = "light"
+
+# Primary accent color - light color for good contrast on dark buttons
+primaryColor = "#888888"
+
+# Main background color - clean white for professional look
+backgroundColor = "#ffffff"
+
+# Secondary background color - subtle gray for cards and widgets (#f8f9fa)
+secondaryBackgroundColor = "#f8f9fa"
+
+# Text color - dark professional gray (#2c3e50)
+textColor = "#2c3e50"
+
+# Link color - matching our theme blue (#2980b9)
+linkColor = "#2980b9"
+
+# Code background - light gray matching our theme
+codeBackgroundColor = "#ecf0f1"
+
+# Font family - clean sans-serif for professional appearance
+font = "sans-serif"
+
+# Heading font - same as body for consistency
+headingFont = "sans-serif"
+
+# Code font - monospace for code blocks
+codeFont = "monospace"
+
+# Border radius - minimal rounded corners (4px)
+baseRadius = "4px"
+
+# Border color - subtle gray borders (#ecf0f1)
+borderColor = "#ecf0f1"
+
+# Show widget borders for better definition
+showWidgetBorder = true
+
+# Base font size - standard 16px
+baseFontSize = 16
+
+# Show sidebar border for clear separation
+showSidebarBorder = true
+
+[theme.sidebar]
+# Sidebar uses same colors but slightly different background
+primaryColor = "#888888"
+backgroundColor = "#f8f9fa"
+secondaryBackgroundColor = "#ecf0f1"
+textColor = "#2c3e50"
+linkColor = "#2980b9"
+codeBackgroundColor = "#e9ecef" 

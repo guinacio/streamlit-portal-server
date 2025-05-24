@@ -12,7 +12,6 @@ wheels/
 # Streamlit Portal specific files
 portal.db
 app_images/
-.streamlit/
 
 # OS specific
 .DS_Store

@@ -101,27 +101,27 @@ def main():
     if process2:
         processes.append(process2)
     
-    # # Start the main portal
-    # print("\n🚀 Starting Streamlit Portal...")
+    # Start the main portal
+    print("\n🚀 Starting Streamlit Portal...")
     try:
-    #     portal_cmd = [
-    #         sys.executable, "-m", "streamlit", "run", 
-    #         "app.py",
-    #         "--server.port", "8501"
-    #     ]
+        portal_cmd = [
+            sys.executable, "-m", "streamlit", "run", 
+            "app.py",
+            "--server.port", "8501"
+        ]
         
-    #     print("🌐 Portal will be available at: http://localhost:8501")
-    #     print("\n📋 Default login credentials:")
-    #     print("   Username: admin")
-    #     print("   Password: admin123")
+        print("🌐 Portal will be available at: http://localhost:8501")
+        print("\n📋 Default login credentials:")
+        print("   Username: admin")
+        print("   Password: admin123")
         print("\n🎮 Demo apps will be running on:")
         print("   📊 Analytics Dashboard: http://localhost:8502")
         print("   🤖 ML Playground: http://localhost:8503")
         print("\n⚠️  After logging in, go to Admin Panel to configure the demo apps!")
         print("\n🛑 Press Ctrl+C to stop all applications")
         
-        # # Run the portal (this will block)
-        # subprocess.run(portal_cmd)
+        # Run the portal (this will block)
+        subprocess.run(portal_cmd)
         
     except KeyboardInterrupt:
         print("\n\n🛑 Shutting down applications...")
