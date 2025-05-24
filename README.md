@@ -276,8 +276,6 @@ category = st.selectbox("Category",
 ### Running Multiple Test Apps
 Test the portal with multiple Streamlit applications:
 
-![Multi-App Setup](images/multi-app-setup.png)
-
 1. **Create test applications**:
    ```bash
    mkdir test_apps && cd test_apps
@@ -321,8 +319,6 @@ The project includes `.cursorrules` file with comprehensive development guidelin
 - **Security**: Input validation, SQL injection prevention
 
 ## Security Best Practices
-
-![Security Features](images/security-overview.png)
 
 ### Authentication Security
 - **bcrypt password hashing** with salt for secure storage
@@ -384,8 +380,6 @@ The project includes `.cursorrules` file with comprehensive development guidelin
 ## Contributing
 
 We welcome contributions! Here's how to get involved:
-
-![Contributing Guide](images/contributing.png)
 
 ### Reporting Issues
 - Use GitHub Issues with detailed reproduction steps
