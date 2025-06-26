@@ -12,7 +12,7 @@ def install_dependencies():
     """Install required dependencies"""
     print("📦 Installing dependencies...")
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+        subprocess.check_call(["uv", "sync"])
         print("✅ Dependencies installed successfully!")
         return True
     except subprocess.CalledProcessError:
