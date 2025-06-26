@@ -85,7 +85,7 @@ def is_app_public(app_id: int, db) -> bool:
     except Exception:
         return False
 
-def render_app_card(app_info: Dict, is_running: bool, db=None) -> str:
+def render_app_card(app_info: Dict, is_running: bool, db=None, server_ip: str = None) -> str:
     """Render an app card with modern styling"""
     status_color = "#28a745" if is_running else "#dc3545"
     status_text = "Running" if is_running else "Offline"
@@ -120,7 +120,8 @@ def render_app_card(app_info: Dict, is_running: bool, db=None) -> str:
     
     launch_button = ""
     if is_running:
-        url = f"http://localhost:{app_info['port']}"
+        ip = server_ip or get_server_ip()
+        url = f"http://{ip}:{app_info['port']}"
         launch_button = f'''
             <a href="{url}" target="_blank" class="launch-btn">
                 🚀 Launch App
@@ -674,3 +675,15 @@ def display_unregistered_ports(unregistered_ports: List[int]):
                     🌐 Open
                 </a>
             ''')
+
+def get_server_ip() -> str:
+    """Get the local server's IP address (not localhost)"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Doesn't have to be reachable
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"

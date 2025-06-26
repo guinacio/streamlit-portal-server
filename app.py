@@ -9,7 +9,8 @@ from database import StreamlitPortalDB
 from utils import (
     check_port, check_multiple_ports, check_app_ports_cached, save_uploaded_image, render_app_card,
     get_custom_css, display_user_info, display_stats, filter_apps_by_category,
-    get_unique_categories, search_apps, scan_unregistered_ports_cached, display_unregistered_ports
+    get_unique_categories, search_apps, scan_unregistered_ports_cached, display_unregistered_ports,
+    get_server_ip
 )
 
 # Page configuration
@@ -62,12 +63,12 @@ def login_page():
                 st.error("Please enter both username and password")
     
     # Show default credentials
-    st.markdown("""
-    ---
-    **Default Admin Credentials:**
-    - Username: `admin`
-    - Password: `admin123`
-    """)
+    # st.markdown("""
+    # ---
+    # **Default Admin Credentials:**
+    # - Username: `admin`
+    # - Password: `admin123`
+    # """)
 
 def admin_panel():
     """Admin panel for managing apps and users"""
@@ -513,9 +514,10 @@ def main_dashboard():
     if filtered_apps:
         # Create grid of app cards
         cols = st.columns(3)
+        server_ip = get_server_ip()
         for i, app in enumerate(filtered_apps):
             with cols[i % 3]:
-                card_html = render_app_card(app, app['is_running'], db)
+                card_html = render_app_card(app, app['is_running'], db, server_ip=server_ip)
                 st.html(card_html)
     else:
         if search_term or selected_category != "All":
