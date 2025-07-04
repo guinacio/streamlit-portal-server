@@ -318,24 +318,67 @@ The project includes `.cursorrules` file with comprehensive development guidelin
 - **Performance**: Caching strategies, efficient database queries
 - **Security**: Input validation, SQL injection prevention
 
-## Security Best Practices
+## Security Features
 
-### Authentication Security
+### Enterprise-Grade Security
+The Streamlit Portal implements multiple layers of security to protect against unauthorized access and ensure safe application deployment in enterprise environments.
+
+### Multi-Layer Authentication
+- **Session-Based Security**: Advanced session management with secure token validation
+- **Anti-Sharing Protection**: URLs cannot be shared between users or browsers
+- **Automatic Token Expiration**: Access tokens expire automatically and are single-use only
+- **Session Binding**: All access is cryptographically tied to authenticated portal sessions
+- **Logout Protection**: When users log out, all their active sessions become invalid immediately
+
+### Secure Access Control
+- **Portal Session Validation**: Database-backed session verification prevents unauthorized access
+- **Token-to-Session Binding**: Access tokens are permanently linked to the portal session that created them
+- **Cross-Platform Security**: Works reliably across different browsers and devices
+- **Non-Repudiation**: Clear audit trail of who accessed what and when
+
+### Application Protection
+Each Streamlit application can be secured using the included security library:
+```python
+from portal_security import require_portal_access
+
+# At the top of your Streamlit app
+require_portal_access(app_id=1)  # Your app's ID from the portal database
+```
+
+### Security Best Practices
+
+#### Authentication Security
 - **bcrypt password hashing** with salt for secure storage
 - **Session management** prevents unauthorized access
 - **Role-based permissions** limit access based on user roles
 - **Input validation** on all user inputs to prevent injection attacks
+- **Secure session cookies** with HttpOnly and SameSite protection
 
-### Database Security  
+#### Database Security  
 - **Parameterized queries** prevent SQL injection
 - **Foreign key constraints** maintain data integrity
 - **Transaction safety** ensures atomic operations
 - **Connection management** with proper cleanup
+- **Session state protection** with database validation
 
-### File Security
+#### Access Security
+- **Group-based permissions** for granular access control
+- **Public/private app designation** with clear security boundaries
+- **Admin privilege separation** with protected account controls
+- **Automatic session cleanup** removes expired sessions
+- **Single-use tokens** prevent replay attacks
+
+#### Network Security
+- **Port scanning protection** with controlled discovery ranges
+- **HTTP verification** ensures only legitimate applications are discovered
+- **Cross-origin protection** prevents unauthorized embedding
+- **Secure proxy architecture** with cookie-based session management
+
+#### File Security
 - **Image upload validation** (type, size restrictions)
 - **Path sanitization** prevents directory traversal
 - **Secure file storage** in designated directories
+- **File type restrictions** with automatic processing
 
 ## Troubleshooting
 

@@ -120,8 +120,8 @@ def main():
         print("\n⚠️  After logging in, go to Admin Panel to configure the demo apps!")
         print("\n🛑 Press Ctrl+C to stop all applications")
         
-        # Run the portal (this will block)
-        subprocess.run(portal_cmd)
+        # # Run the portal (this will block)
+        # subprocess.run(portal_cmd)
         
     except KeyboardInterrupt:
         print("\n\n🛑 Shutting down applications...")

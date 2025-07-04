@@ -85,6 +85,28 @@ class StreamlitPortalDB:
             )
         ''')
 
+        # Access tokens table for secure app access
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS access_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                token TEXT UNIQUE NOT NULL,
+                user_id INTEGER NOT NULL,
+                app_id INTEGER NOT NULL,
+                portal_session_token TEXT,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id),
+                FOREIGN KEY (app_id) REFERENCES apps (id)
+            )
+        ''')
+
+        # Add portal_session_token column if it doesn't exist (for existing databases)
+        try:
+            cursor.execute('ALTER TABLE access_tokens ADD COLUMN portal_session_token TEXT')
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
+
         conn.commit()
         conn.close()
 
@@ -540,4 +562,248 @@ class StreamlitPortalDB:
         cursor.execute('SELECT DISTINCT group_name FROM user_groups ORDER BY group_name')
         groups = cursor.fetchall()
         conn.close()
-        return [group[0] for group in groups] 
+        return [group[0] for group in groups]
+
+    def generate_access_token(self, user_id: int, app_id: int, hours: int = 24) -> str:
+        """Generate a secure access token for user-app combination"""
+        import secrets
+        from datetime import datetime, timedelta
+        
+        # Generate a cryptographically secure token
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.now() + timedelta(hours=hours)
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Clean up expired tokens first
+        cursor.execute('DELETE FROM access_tokens WHERE expires_at < ?', (datetime.now(),))
+        
+        # Insert new token
+        cursor.execute('''
+            INSERT INTO access_tokens (token, user_id, app_id, expires_at)
+            VALUES (?, ?, ?, ?)
+        ''', (token, user_id, app_id, expires_at))
+        
+        conn.commit()
+        conn.close()
+        
+        return token
+
+    def validate_access_token(self, token: str, app_id: int) -> bool:
+        """Validate if a token grants access to specific app"""
+        from datetime import datetime
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT user_id FROM access_tokens 
+            WHERE token = ? AND app_id = ? AND expires_at > ?
+        ''', (token, app_id, datetime.now()))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        return result is not None
+
+    def get_app_by_id(self, app_id: int) -> Optional[Dict]:
+        """Get app configuration by ID"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, port, name, description, image_path, category, is_active, created_at
+            FROM apps WHERE id = ?
+        ''', (app_id,))
+        app = cursor.fetchone()
+        conn.close()
+        
+        if app:
+            return {
+                'id': app[0],
+                'port': app[1],
+                'name': app[2],
+                'description': app[3],
+                'image_path': app[4],
+                'category': app[5],
+                'is_active': app[6],
+                'created_at': app[7]
+            }
+        return None
+
+    def create_portal_session(self, user_id: int, hours: int = 24) -> str:
+        """Create a secure portal session for a user"""
+        import secrets
+        from datetime import datetime, timedelta
+        
+        # Generate a cryptographically secure session token
+        session_token = secrets.token_urlsafe(32)
+        expires_at = datetime.now() + timedelta(hours=hours)
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Clean up expired sessions first
+        cursor.execute('DELETE FROM user_sessions WHERE expires_at < ?', (datetime.now(),))
+        
+        # Also clean up old sessions for this user (keep only most recent)
+        cursor.execute('''
+            DELETE FROM user_sessions 
+            WHERE user_id = ? AND is_active = 1
+        ''', (user_id,))
+        
+        # Insert new session
+        cursor.execute('''
+            INSERT INTO user_sessions (user_id, session_token, expires_at, is_active)
+            VALUES (?, ?, ?, 1)
+        ''', (user_id, session_token, expires_at))
+        
+        conn.commit()
+        conn.close()
+        
+        return session_token
+
+    def validate_portal_session(self, session_token: str) -> Optional[Dict]:
+        """Validate a portal session token and return user info if valid"""
+        from datetime import datetime
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT u.id, u.username, u.full_name, u.email, u.role, s.expires_at
+            FROM user_sessions s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.session_token = ? AND s.is_active = 1 AND s.expires_at > ?
+        ''', (session_token, datetime.now()))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            return {
+                'id': result[0],
+                'username': result[1],
+                'full_name': result[2],
+                'email': result[3],
+                'role': result[4],
+                'expires_at': result[5]
+            }
+        return None
+
+    def invalidate_portal_session(self, session_token: str) -> bool:
+        """Invalidate a portal session"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE user_sessions SET is_active = 0 WHERE session_token = ?
+            ''', (session_token,))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception:
+            return False
+
+    def generate_access_token_with_session(self, user_id: int, app_id: int, portal_session_token: str, hours: int = 1) -> str:
+        """Generate a secure access token tied to a specific portal session"""
+        import secrets
+        from datetime import datetime, timedelta
+        
+        # First verify the portal session is valid and belongs to this user
+        portal_session = self.validate_portal_session(portal_session_token)
+        if not portal_session or portal_session['id'] != user_id:
+            raise ValueError("Invalid portal session for this user")
+        
+        # Generate a cryptographically secure token
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.now() + timedelta(hours=hours)
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Clean up expired tokens first
+        cursor.execute('DELETE FROM access_tokens WHERE expires_at < ?', (datetime.now(),))
+        
+        # Store the token with association to portal session
+        cursor.execute('''
+            INSERT INTO access_tokens (token, user_id, app_id, portal_session_token, expires_at)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (token, user_id, app_id, portal_session_token, expires_at))
+        
+        conn.commit()
+        conn.close()
+        
+        return token
+
+    def validate_access_token_with_session(self, token: str, app_id: int, portal_session_token: str) -> bool:
+        """Validate if a token grants access to specific app AND was generated by the same portal session"""
+        from datetime import datetime
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT user_id, portal_session_token FROM access_tokens 
+            WHERE token = ? AND app_id = ? AND expires_at > ?
+        ''', (token, app_id, datetime.now()))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if not result:
+            return False
+        
+        stored_portal_session = result[1]
+        
+        # CRITICAL: Verify that the portal session token matches
+        # This prevents token sharing between different portal sessions
+        if stored_portal_session != portal_session_token:
+            return False
+        
+        # Also verify that the portal session is still valid
+        portal_session = self.validate_portal_session(portal_session_token)
+        if not portal_session:
+            return False
+        
+        return True 
+
+    def validate_access_token_with_active_portal_session(self, token: str, app_id: int) -> bool:
+        """
+        Validate if a token grants access to specific app AND was generated by a currently active portal session.
+        This method doesn't require the portal session token - it looks it up from the access token.
+        """
+        from datetime import datetime
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Get the access token info including the portal session it was generated with
+        cursor.execute('''
+            SELECT user_id, portal_session_token FROM access_tokens 
+            WHERE token = ? AND app_id = ? AND expires_at > ?
+        ''', (token, app_id, datetime.now()))
+        
+        result = cursor.fetchone()
+        
+        if not result:
+            conn.close()
+            return False
+        
+        user_id, stored_portal_session = result
+        
+        if not stored_portal_session:
+            # This token was generated with the old method (no portal session binding)
+            conn.close()
+            return False
+        
+        # Verify that the portal session is still active
+        cursor.execute('''
+            SELECT 1 FROM user_sessions 
+            WHERE session_token = ? AND user_id = ? AND is_active = 1 AND expires_at > ?
+        ''', (stored_portal_session, user_id, datetime.now()))
+        
+        portal_session_valid = cursor.fetchone() is not None
+        conn.close()
+        
+        return portal_session_valid 

@@ -85,8 +85,8 @@ def is_app_public(app_id: int, db) -> bool:
     except Exception:
         return False
 
-def render_app_card(app_info: Dict, is_running: bool, db=None, server_ip: str = None) -> str:
-    """Render an app card with modern styling"""
+def render_app_card(app_info: Dict, is_running: bool, db=None, server_ip: str = None, user_id: int = None) -> str:
+    """Render an app card with secure access links"""
     status_color = "#28a745" if is_running else "#dc3545"
     status_text = "Running" if is_running else "Offline"
     status_icon = "🟢" if is_running else "🔴"
@@ -119,19 +119,52 @@ def render_app_card(app_info: Dict, is_running: bool, db=None, server_ip: str = 
         '''
     
     launch_button = ""
-    if is_running:
-        ip = server_ip or get_server_ip()
-        url = f"http://{ip}:{app_info['port']}"
-        launch_button = f'''
-            <a href="{url}" target="_blank" class="launch-btn">
-                🚀 Launch App
-            </a>
-        '''
+    if is_running and user_id:
+        # Get portal session token from Streamlit session state
+        portal_session_token = st.session_state.get('portal_session_token')
+        
+        if portal_session_token:
+            try:
+                # Generate secure access token tied to portal session (1-hour expiration)
+                access_token = db.generate_access_token_with_session(user_id, app_info['id'], portal_session_token, hours=1)
+                ip = server_ip or get_server_ip()
+                
+                # SECURITY: Only include auth_token in URL - portal session MUST come from cookies only!
+                secure_url = f"http://{ip}:8000/app/{app_info['id']}/?auth_token={access_token}"
+                
+                # Create unique button key for this app
+                button_key = f"launch_app_{app_info['id']}_{user_id}"
+                
+                # Use Streamlit button instead of HTML link for better integration
+                launch_button = f'''
+                    <div class="launch-btn-container">
+                        <form action="{secure_url}" method="get" target="_blank" onsubmit="setTimeout(function(){{window.location.reload();}}, 1000);">
+                            <button type="submit" class="launch-btn-form">
+                                🚀 Launch App
+                            </button>
+                        </form>
+                    </div>
+                '''
+            except ValueError as e:
+                # Portal session invalid - user needs to log in again
+                launch_button = '''
+                    <div class="launch-btn-disabled" title="Please refresh the page and log in again">
+                        🔒 Session Expired
+                    </div>
+                '''
+        else:
+            # No portal session - shouldn't happen but handle gracefully
+            launch_button = '''
+                <div class="launch-btn-disabled" title="Please refresh the page and log in again">
+                    🔒 Login Required
+                </div>
+            '''
     
     description = app_info.get('description', 'No description available')
     if len(description) > 120:
         description = description[:120] + "..."
     
+    # Remove port display from card to prevent guessing
     card_html = f'''
         <div class="app-card">
             {image_html}
@@ -148,7 +181,6 @@ def render_app_card(app_info: Dict, is_running: bool, db=None, server_ip: str = 
                 <div class="app-info">
                     <p class="app-description">{description}</p>
                     <div class="app-details">
-                        <span class="app-port">Port: {app_info['port']}</span>
                         <span class="app-category">{app_info.get('category', 'General')}</span>
                     </div>
                 </div>
@@ -358,9 +390,52 @@ def get_custom_css() -> str:
     }
     
     .launch-btn:hover {
-        background: #229954;
+        background: #219a52;
         transform: translateY(-1px);
         box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);
+    }
+    
+    .launch-btn-form {
+        display: inline-block;
+        background: #27ae60;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        border: none;
+        font-weight: 500;
+        text-align: center;
+        transition: all 0.3s ease;
+        width: 100%;
+        box-sizing: border-box;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: inherit;
+    }
+    
+    .launch-btn-form:hover {
+        background: #219a52;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);
+    }
+    
+    .launch-btn-container {
+        width: 100%;
+    }
+    
+    .launch-btn-disabled {
+        display: inline-block;
+        background: #e0e0e0;
+        color: #757575;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        text-align: center;
+        transition: all 0.3s ease;
+        width: 100%;
+        box-sizing: border-box;
+        cursor: not-allowed;
+        opacity: 0.7;
     }
     
     .user-info {
@@ -530,18 +605,36 @@ def get_custom_css() -> str:
 def display_user_info(user_info: Dict):
     """Display user information in sidebar"""
     with st.sidebar:
-        st.markdown(f"""
+        st.html(f"""
         <div class="user-info">
-            <h4>Welcome, {user_info['full_name'] or user_info['username']}!</h4>
-            <p><span class="user-role">{user_info['role'].title()}</span></p>
-            <p><small>Logged in as: {user_info['username']}</small></p>
+            <h3>👤 {user_info['full_name'] or user_info['username']}</h3>
+            <p><strong>Role:</strong> {user_info['role'].title()}</p>
+            <p><strong>Email:</strong> {user_info.get('email', 'Not provided')}</p>
         </div>
-        """, unsafe_allow_html=True)
+        """)
         
-        if st.button("🚪 Logout", key="logout_btn"):
+        # Logout button
+        if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
+            # Invalidate portal session if it exists
+            portal_session_token = st.session_state.get('portal_session_token')
+            if portal_session_token:
+                from database import StreamlitPortalDB
+                db = StreamlitPortalDB()
+                db.invalidate_portal_session(portal_session_token)
+            
             # Clear session state
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
+            
+            # Clear cookie using JavaScript
+            st.html("""
+            <script>
+                // Clear portal session cookie (multiple attempts for compatibility)
+                document.cookie = "portal_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                document.cookie = "portal_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=localhost";
+            </script>
+            """)
+            
             st.rerun()
 
 def display_stats(total_apps: int, running_apps: int, total_users: int = None):

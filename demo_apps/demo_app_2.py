@@ -3,12 +3,21 @@ import pandas as pd
 import numpy as np
 from PIL import Image, ImageDraw
 import io
+import sys
+import os
+
+# Add parent directory to path for security import
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from simple_security import require_portal_access
 
 st.set_page_config(
     page_title="ML Model Playground",
     page_icon="🤖",
     layout="wide"
 )
+
+# Protect against direct port access and validate session tokens (App ID 2)
+require_portal_access(app_id=2)
 
 st.title("🤖 ML Model Playground")
 st.markdown("Interactive machine learning demo application")

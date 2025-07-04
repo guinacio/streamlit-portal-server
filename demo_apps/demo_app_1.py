@@ -3,12 +3,21 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 from datetime import datetime, timedelta
+import sys
+import os
+
+# Add parent directory to path for security import
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from simple_security import require_portal_access
 
 st.set_page_config(
     page_title="Analytics Dashboard",
     page_icon="📊",
     layout="wide"
 )
+
+# Protect against direct port access and validate session tokens (App ID 1)
+require_portal_access(app_id=1)
 
 st.title("📊 Analytics Dashboard Demo")
 st.markdown("This is a sample analytics dashboard for testing the Streamlit Portal")

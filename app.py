@@ -54,7 +54,21 @@ def login_page():
             if username and password:
                 user = db.authenticate_user(username, password)
                 if user:
+                    # Create portal session and set secure cookie
+                    portal_session_token = db.create_portal_session(user['id'])
+                    
+                    # Store both user info and portal session in session state
                     st.session_state.user = user
+                    st.session_state.portal_session_token = portal_session_token
+                    
+                    # Set simple session cookie (used for session restoration in portal only)
+                    st.html(f"""
+                    <script>
+                        // Set portal session cookie for portal session restoration
+                        document.cookie = "portal_session={portal_session_token}; path=/; max-age=86400; SameSite=Lax";
+                    </script>
+                    """)
+                    
                     st.success("Login successful!")
                     st.rerun()
                 else:
@@ -517,7 +531,7 @@ def main_dashboard():
         server_ip = get_server_ip()
         for i, app in enumerate(filtered_apps):
             with cols[i % 3]:
-                card_html = render_app_card(app, app['is_running'], db, server_ip=server_ip)
+                card_html = render_app_card(app, app['is_running'], db, server_ip=server_ip, user_id=st.session_state.user['id'])
                 st.html(card_html)
     else:
         if search_term or selected_category != "All":
@@ -539,6 +553,46 @@ def main_dashboard():
 
 def main():
     """Main application logic"""
+    # Check for existing portal session if not logged in
+    if 'user' not in st.session_state:
+        # Try to restore session from cookie for portal session restoration
+        st.html("""
+        <script>
+            // Function to get cookie value
+            function getCookie(name) {
+                let value = "; " + document.cookie;
+                let parts = value.split("; " + name + "=");
+                if (parts.length == 2) return parts.pop().split(";").shift();
+                return null;
+            }
+            
+            // Check for portal session cookie and set in session storage for Streamlit
+            const portalSession = getCookie("portal_session");
+            if (portalSession) {
+                sessionStorage.setItem("portal_session_restore", portalSession);
+            }
+        </script>
+        """)
+        
+        # Try to restore from session storage (set by JavaScript above)
+        # Note: This is a simplified approach - in production you might want to use a more robust method
+        portal_session_from_storage = st.session_state.get('portal_session_restore')
+        
+        if portal_session_from_storage:
+            # Validate the portal session
+            user_info = db.validate_portal_session(portal_session_from_storage)
+            if user_info:
+                # Restore user session
+                st.session_state.user = {
+                    'id': user_info['id'],
+                    'username': user_info['username'],
+                    'full_name': user_info['full_name'],
+                    'email': user_info['email'],
+                    'role': user_info['role']
+                }
+                st.session_state.portal_session_token = portal_session_from_storage
+                st.rerun()
+    
     # Check if user is logged in
     if 'user' not in st.session_state:
         login_page()
