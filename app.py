@@ -103,8 +103,6 @@ def admin_panel():
     with tab3:
         manage_permissions_tab()
     
-    
-
 def manage_apps_tab():
     """Tab for managing applications"""
     st.subheader("Add/Edit Application")

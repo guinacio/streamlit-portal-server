@@ -129,22 +129,21 @@ def render_app_card(app_info: Dict, is_running: bool, db=None, server_ip: str = 
                 access_token = db.generate_access_token_with_session(user_id, app_info['id'], portal_session_token, hours=1)
                 ip = server_ip or get_server_ip()
                 
-                # SECURITY: Only include auth_token in URL - portal session MUST come from cookies only!
-                secure_url = f"http://{ip}:8000/app/{app_info['id']}/?auth_token={access_token}"
+                # SECURITY: Use hidden form field for auth_token (form action strips query params)
+                base_url = f"http://{ip}:8000/app/{app_info['id']}/"
                 
-                # Create unique button key for this app
-                button_key = f"launch_app_{app_info['id']}_{user_id}"
-                
-                # Use Streamlit button instead of HTML link for better integration
+                # Use hidden form field to pass auth_token (prevents URL stripping issue)
                 launch_button = f'''
                     <div class="launch-btn-container">
-                        <form action="{secure_url}" method="get" target="_blank" onsubmit="setTimeout(function(){{window.location.reload();}}, 1000);">
+                        <form action="{base_url}" method="get" target="_blank" onsubmit="setTimeout(function(){{window.location.reload();}}, 500);">
+                            <input type="hidden" name="auth_token" value="{access_token}">
                             <button type="submit" class="launch-btn-form">
                                 🚀 Launch App
                             </button>
                         </form>
                     </div>
                 '''
+                
             except ValueError as e:
                 # Portal session invalid - user needs to log in again
                 launch_button = '''
