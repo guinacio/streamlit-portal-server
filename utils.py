@@ -3,6 +3,7 @@ import os
 import hashlib
 from PIL import Image
 import streamlit as st
+import streamlit.components.v1 as components
 from typing import List, Dict, Optional
 import base64
 from io import BytesIO
@@ -626,13 +627,13 @@ def display_user_info(user_info: Dict):
                 del st.session_state[key]
             
             # Clear cookie using JavaScript
-            st.html("""
+            components.html("""
             <script>
                 // Clear portal session cookie (multiple attempts for compatibility)
                 document.cookie = "portal_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
                 document.cookie = "portal_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=localhost";
             </script>
-            """)
+            """, height=0)
             
             st.rerun()
 

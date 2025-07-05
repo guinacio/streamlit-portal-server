@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 from typing import Dict, List
 import os
@@ -62,12 +63,12 @@ def login_page():
                     st.session_state.portal_session_token = portal_session_token
                     
                     # Set simple session cookie (used for session restoration in portal only)
-                    st.html(f"""
+                    components.html(f"""
                     <script>
                         // Set portal session cookie for portal session restoration
                         document.cookie = "portal_session={portal_session_token}; path=/; max-age=86400; SameSite=Lax";
                     </script>
-                    """)
+                    """, height=0)
                     
                     st.success("Login successful!")
                     st.rerun()
@@ -551,34 +552,14 @@ def main_dashboard():
 
 def main():
     """Main application logic"""
-    # Check for existing portal session if not logged in
+    # Try to restore session from cookie if not logged in
     if 'user' not in st.session_state:
-        # Try to restore session from cookie for portal session restoration
-        st.html("""
-        <script>
-            // Function to get cookie value
-            function getCookie(name) {
-                let value = "; " + document.cookie;
-                let parts = value.split("; " + name + "=");
-                if (parts.length == 2) return parts.pop().split(";").shift();
-                return null;
-            }
-            
-            // Check for portal session cookie and set in session storage for Streamlit
-            const portalSession = getCookie("portal_session");
-            if (portalSession) {
-                sessionStorage.setItem("portal_session_restore", portalSession);
-            }
-        </script>
-        """)
+        # Check for portal session cookie using Streamlit's built-in cookie access
+        portal_session_token = st.context.cookies.get("portal_session")
         
-        # Try to restore from session storage (set by JavaScript above)
-        # Note: This is a simplified approach - in production you might want to use a more robust method
-        portal_session_from_storage = st.session_state.get('portal_session_restore')
-        
-        if portal_session_from_storage:
+        if portal_session_token:
             # Validate the portal session
-            user_info = db.validate_portal_session(portal_session_from_storage)
+            user_info = db.validate_portal_session(portal_session_token)
             if user_info:
                 # Restore user session
                 st.session_state.user = {
@@ -588,8 +569,29 @@ def main():
                     'email': user_info['email'],
                     'role': user_info['role']
                 }
-                st.session_state.portal_session_token = portal_session_from_storage
+                st.session_state.portal_session_token = portal_session_token
                 st.rerun()
+    
+    # If user is logged in, validate their session periodically
+    if 'user' in st.session_state and 'portal_session_token' in st.session_state:
+        # Check if session is still valid (only check occasionally to avoid performance issues)
+        if 'last_session_check' not in st.session_state:
+            st.session_state.last_session_check = datetime.now()
+        
+        # Check session validity every 5 minutes
+        time_since_check = (datetime.now() - st.session_state.last_session_check).total_seconds()
+        if time_since_check > 300:  # 5 minutes
+            user_info = db.validate_portal_session(st.session_state.portal_session_token)
+            if not user_info:
+                # Session expired, clear user data
+                if 'user' in st.session_state:
+                    del st.session_state.user
+                if 'portal_session_token' in st.session_state:
+                    del st.session_state.portal_session_token
+                st.rerun()
+            else:
+                # Update last check time
+                st.session_state.last_session_check = datetime.now()
     
     # Check if user is logged in
     if 'user' not in st.session_state:

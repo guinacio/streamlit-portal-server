@@ -14,6 +14,7 @@ Usage:
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 from datetime import datetime
 import requests
 
@@ -59,14 +60,14 @@ def require_portal_access(app_id: int):
         return
     
     # Additional JavaScript check for iframe context
-    st.markdown("""
+    components.html("""
     <script>
     if (window.self === window.top) {
         // Direct access detected - not in iframe - redirect to portal
         window.location.href = 'http://localhost:8501';
     }
     </script>
-    """, unsafe_allow_html=True)
+    """, height=0)
     
     # Success! Show a small security indicator
     st.markdown(
