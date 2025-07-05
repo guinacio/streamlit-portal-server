@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 import secrets
 from datetime import datetime, timedelta
 from database import StreamlitPortalDB
+from utils import get_server_ip
 
 app = FastAPI(title="Streamlit Portal Proxy", description="Cookie-based secure proxy for Streamlit apps")
 db = StreamlitPortalDB()
@@ -78,7 +79,9 @@ def create_iframe_page(app_info: dict, request: Request, user_id: int = 0) -> st
         'used': False
     }
     
-    streamlit_url = f"http://localhost:{app_info['port']}?portal_session={validation_token}"
+    # Use server IP instead of localhost for multi-host accessibility
+    server_ip = get_server_ip()
+    streamlit_url = f"http://{server_ip}:{app_info['port']}?portal_session={validation_token}"
     
     html_content = f"""
     <!DOCTYPE html>
@@ -400,7 +403,7 @@ def create_access_denied_page(app_id: int) -> str:
             <p>You don't have permission to access this application.</p>
             <p>Please contact your administrator for access.</p>
             
-            <a href="http://localhost:8501" class="portal-btn">🏠 Return to Portal</a>
+            <a href="http://{get_server_ip()}:8501" class="portal-btn">🏠 Return to Portal</a>
         </div>
     </body>
     </html>
@@ -459,7 +462,7 @@ def create_access_denied_page_with_reason(app_id: int, title: str, message: str)
             <p>{message}</p>
             <p>Please contact your administrator for access.</p>
             
-            <a href="http://localhost:8501" class="portal-btn">🏠 Return to Portal</a>
+            <a href="http://{get_server_ip()}:8501" class="portal-btn">🏠 Return to Portal</a>
         </div>
     </body>
     </html>

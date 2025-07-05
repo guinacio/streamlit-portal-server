@@ -1,14 +1,14 @@
 """
-Simple Security Library for Streamlit Apps
+App Security Library for Streamlit Apps
 
-This library provides basic protection against direct port access
-for Streamlit apps in the Portal ecosystem.
+This library provides comprehensive protection against unauthorized access
+for Streamlit apps in the Portal ecosystem, with app ID validation.
 
 Usage:
-    from simple_security import require_portal_access
+    from app_security import require_portal_access
     
     # At the top of your Streamlit app (after page config)
-    require_portal_access()
+    require_portal_access(app_id=123)  # Use your app's ID from the portal
     
     # Your app code continues here...
 """
@@ -24,7 +24,10 @@ def require_portal_access(app_id: int):
     Validate that the app is being accessed through the portal with a valid session.
     
     This prevents both direct port access and iframe URL sharing by validating
-    the session token against the proxy server's session store.
+    the session token against the proxy server's session store with app ID matching.
+    
+    Args:
+        app_id (int): The unique app ID from the portal database that must match
     """
     
     # Get query parameters
@@ -93,7 +96,7 @@ def require_portal_access(app_id: int):
 
 def _show_access_denied(reason: str = "Access denied"):
     """
-    Display a simple access denied message.
+    Display a comprehensive access denied message.
     """
     
     st.markdown(
@@ -145,6 +148,9 @@ def _show_access_denied(reason: str = "Access denied"):
 def portal_protected(app_id: int):
     """
     Decorator version for protecting functions
+    
+    Args:
+        app_id (int): The unique app ID from the portal database
     """
     def decorator(func):
         def wrapper(*args, **kwargs):
@@ -156,8 +162,8 @@ def portal_protected(app_id: int):
 
 # Example usage
 if __name__ == "__main__":
-    st.title("Simple Security Test")
-    st.write("This is a test of the simple security library.")
+    st.title("App Security Test")
+    st.write("This is a test of the app security library.")
     
     # Test the security (this will show access denied for direct access)
     require_portal_access(app_id=999)  # Test app ID

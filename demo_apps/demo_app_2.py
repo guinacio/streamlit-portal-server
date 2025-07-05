@@ -8,7 +8,7 @@ import os
 
 # Add parent directory to path for security import
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from simple_security import require_portal_access
+from app_security import require_portal_access
 
 st.set_page_config(
     page_title="ML Model Playground",

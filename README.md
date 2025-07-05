@@ -7,8 +7,10 @@ A comprehensive, production-ready server solution that transforms your Streamlit
 ### Advanced Authentication & Security
 - **Secure user login/logout** with bcrypt password hashing
 - **Role-based access control** (Admin/User roles)
-- **Session management** with automatic timeout
+- **Portal session management** with secure cookies and automatic restoration
+- **Access token system** with session binding to prevent URL sharing
 - **Group-based permissions** for granular access control
+- **App ID security validation** to prevent unauthorized app access
 - **Protected user accounts** (prevent deletion of admin/current user)
 
 ### Complete User Management
@@ -24,6 +26,7 @@ A comprehensive, production-ready server solution that transforms your Streamlit
 - **Auto-discovery** of running Streamlit applications
 - **Full app lifecycle** - Create, edit, delete, monitor
 - **Rich app metadata** (name, description, category, custom images)
+- **App ID security integration** - Each app gets unique ID for security validation
 - **Port scanning** for unregistered applications (8502-8600 range)
 - **Real-time status monitoring** with caching for performance
 - **Category-based organization** with filtering
@@ -38,12 +41,8 @@ A comprehensive, production-ready server solution that transforms your Streamlit
 - **Scan statistics** and status reporting
 
 ### Modern UI/UX Design
-- **Professional mature theme** with dark blue-gray color scheme
-- **Minimal border radius** (4px) for contemporary look
-- **Responsive card-based layouts** with CSS Grid/Flexbox
+- **Professional mature theme** with clean, enterprise-grade design
 - **Custom Streamlit theming** via `.streamlit/config.toml`
-- **Consistent design language** across all components
-- **Hover effects and smooth transitions**
 - **Status indicators** (🟢 Running, 🔴 Offline, 🟢 Active, 🔴 Inactive)
 
 ### Granular Permission System
@@ -66,6 +65,7 @@ A comprehensive, production-ready server solution that transforms your Streamlit
 ### Prerequisites
 - **Python 3.8+**
 - **Required packages** (automatically installed via requirements.txt)
+- **Network Access**: For multi-user access, the server must be on the same network as the users
 
 ### Installation
 
@@ -97,7 +97,8 @@ A comprehensive, production-ready server solution that transforms your Streamlit
    ```
 
 5. **Access the portal**:
-   Open your browser and navigate to `http://localhost:8501`
+   - **Local access**: `http://localhost:8501`
+   - **Network access**: `http://[SERVER-IP]:8501` (replace [SERVER-IP] with your server's IP address)
 
 **Alternative: Using pip**
 
@@ -137,9 +138,11 @@ Navigate to **Admin Panel → Manage Apps**
 
 **Managing Existing Apps:**
 - View all apps with status indicators (🟢 Running, 🔴 Offline)
+- **App ID Display**: Each app shows its unique ID for security library integration
 - Edit any application by selecting it from the dropdown
 - Delete applications with confirmation (removes from permissions too)
 - Monitor app categories and descriptions
+- Copy App IDs for use in the `app_security.py` library
 
 **Automated App Discovery:**
 - Click "🔍 Scan for Unregistered Apps" to find running apps on ports 8502-8600
@@ -209,9 +212,10 @@ Navigate to **Admin Panel → Groups & Permissions**
 
 #### 2. **Launching Applications**
 - Click **"🚀 Launch App"** on running applications
-- Apps open in new browser tabs for seamless workflow
+- Apps open in new browser tabs with secure access tokens
+- Portal page automatically refreshes to renew tokens after launching
 - Only applications you have group permissions for are displayed
-- Direct access to registered and unregistered apps
+- Secure access through FastAPI proxy server (port 8000)
 
 #### 3. **User Experience Features**
 - **Responsive Design**: Works on desktop, tablet, and mobile
@@ -221,18 +225,66 @@ Navigate to **Admin Panel → Groups & Permissions**
 
 ## Architecture
 
+## Network Configuration
+
+### Multi-User Network Setup
+
+For teams and enterprise environments where multiple users need access:
+
+**Network Requirements:**
+- **Same Network**: The server hosting the portal must be on the same local network (LAN) as the users
+- **Port Access**: Ensure ports 8501 (portal) and 8000 (proxy) are accessible across the network
+- **Firewall**: Configure firewall rules to allow traffic on these ports if needed
+
+**Access Methods:**
+- **Local Development**: `http://localhost:8501` (single machine)
+- **Team Access**: `http://192.168.1.100:8501` (replace with your server's IP)
+- **Corporate Network**: `http://10.0.1.50:8501` (corporate IP range)
+
+**Finding Your Server IP:**
+```bash
+# On Windows
+ipconfig
+
+# On macOS/Linux  
+ifconfig
+# or
+ip addr show
+```
+
+**Example Network Setup:**
+```
+Corporate Network (10.0.1.0/24)
+├── Server: 10.0.1.50 (Running portal on port 8501)
+├── User 1: 10.0.1.101 (Accesses http://10.0.1.50:8501)
+├── User 2: 10.0.1.102 (Accesses http://10.0.1.50:8501)
+└── User 3: 10.0.1.103 (Accesses http://10.0.1.50:8501)
+```
+
+**Security Considerations:**
+- The portal automatically uses the server's IP for all internal communications
+- All Streamlit apps must run on the same server for security and network access
+- Apps are accessed through the secure proxy server (port 8000) with session validation
+
 ## Configuration & Customization
 
 ### File Structure
 ```
 streamlit-portal-server/
-├── app.py                    # Main Streamlit application
+├── app.py                    # Main Streamlit portal application
 ├── database.py              # Database operations and models  
 ├── utils.py                 # Utility functions and helpers
+├── app_security.py          # Security library for protecting individual apps
+├── proxy_server.py          # FastAPI proxy server for secure app access
+├── run_demo.py              # Demo startup script with sample apps
 ├── requirements.txt         # Python dependencies
+├── pyproject.toml           # Modern Python project configuration
 ├── .cursorrules            # AI development guidelines
 ├── .streamlit/
 │   └── config.toml         # Streamlit theme configuration
+├── demo_apps/              # Sample applications with security integration
+│   ├── demo_app_1.py       # Analytics Dashboard (App ID 1)
+│   └── demo_app_2.py       # ML Model Playground (App ID 2)
 ├── app_images/             # Uploaded app images (auto-created)
 ├── portal.db              # SQLite database (auto-created)
 └── README.md              # This documentation
@@ -336,14 +388,49 @@ The Streamlit Portal implements multiple layers of security to protect against u
 - **Cross-Platform Security**: Works reliably across different browsers and devices
 - **Non-Repudiation**: Clear audit trail of who accessed what and when
 
-### Application Protection
-Each Streamlit application can be secured using the included security library:
-```python
-from portal_security import require_portal_access
+### Application Protection with App ID Security
+Each Streamlit application can be secured using the included security library with mandatory app ID validation:
 
-# At the top of your Streamlit app
-require_portal_access(app_id=1)  # Your app's ID from the portal database
+```python
+from app_security import require_portal_access
+
+# At the top of your Streamlit app (after page config)
+require_portal_access(app_id=123)  # MUST match your app's ID from the portal database
 ```
+
+**How App ID Security Works:**
+
+1. **Portal Database Registration**: Each app registered in the portal gets a unique numeric ID
+2. **Security Library Integration**: Apps use `app_security.py` with their specific app ID
+3. **ID Matching Validation**: The portal validates that the requested app ID matches the authenticated session token
+4. **Access Denial**: If app IDs don't match, access is immediately denied, if tokens don't match or are expired, denied
+
+**Setting Up App Security:**
+
+1. **Register your app** in the Portal Admin Panel → Manage Apps
+2. **Note the App ID** displayed in the management interface (see admin guide below)
+3. **Add security to your Streamlit app:**
+   ```python
+   import streamlit as st
+   from app_security import require_portal_access
+   
+   # Page config first
+   st.set_page_config(page_title="My App", page_icon="📊")
+   
+   # Security check with your app's ID - CRITICAL: Use the correct ID!
+   require_portal_access(app_id=123)  # Replace 123 with your actual app ID
+   
+   # Your app code continues here
+   st.title("My Secure Application")
+   ```
+
+4. **Deploy your app** on the port specified in the portal registration
+
+**Security Benefits:**
+- **Prevents unauthorized access** even with valid portal sessions
+- **App-specific access control** - users can only access apps they have permissions for
+- **ID spoofing protection** - apps cannot impersonate other applications
+- **Database-backed validation** - all access is verified against the portal database
 
 ### Security Best Practices
 
@@ -419,6 +506,13 @@ require_portal_access(app_id=1)  # Your app's ID from the portal database
    - Clear browser cache to refresh CSS
    - Check for JavaScript console errors
    - Ensure Streamlit version supports theme features
+
+7. **Network Access Issues**
+   - Verify server and users are on the same network (LAN)
+   - Check firewall settings for ports 8501 and 8000
+   - Confirm server IP address is accessible from user machines
+   - Test with `ping [SERVER-IP]` from user machines
+   - Ensure no network restrictions block HTTP traffic
 
 ## Contributing
 

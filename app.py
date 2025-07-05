@@ -78,12 +78,12 @@ def login_page():
                 st.error("Please enter both username and password")
     
     # Show default credentials
-    # st.markdown("""
-    # ---
-    # **Default Admin Credentials:**
-    # - Username: `admin`
-    # - Password: `admin123`
-    # """)
+    st.markdown("""
+    ---
+    **Default Admin Credentials:**
+    - Username: `admin`
+    - Password: `admin123`
+    """)
 
 def admin_panel():
     """Admin panel for managing apps and users"""
@@ -175,8 +175,10 @@ def manage_apps_tab():
     # Display existing apps
     if existing_apps:
         st.subheader("Existing Applications")
+        st.info("💡 **App ID** is required for the `app_security.py` library. Copy the ID and use it in your app's security setup.")
+        
         for app in existing_apps:
-            col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+            col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
             
             with col1:
                 st.write(f"**{app['name']}** (Port {app['port']})")
@@ -184,13 +186,17 @@ def manage_apps_tab():
                     st.caption(app['description'][:100] + "..." if len(app['description']) > 100 else app['description'])
             
             with col2:
+                st.write(f"**App ID: {app['id']}**")
+                st.caption("For app_security.py")
+            
+            with col3:
                 status = "🟢 Running" if check_port(app['port']) else "🔴 Offline"
                 st.write(status)
             
-            with col3:
+            with col4:
                 st.write(f"Category: {app['category']}")
             
-            with col4:
+            with col5:
                 if st.button(f"🗑️ Delete", key=f"delete_{app['id']}"):
                     if db.delete_app(app['id']):
                         st.success("App deleted successfully!")
