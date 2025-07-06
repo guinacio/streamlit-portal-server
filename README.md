@@ -300,7 +300,6 @@ streamlit-portal-server/
 ├── run_demo.py              # Demo startup script with sample apps
 ├── requirements.txt         # Python dependencies
 ├── pyproject.toml           # Modern Python project configuration
-├── .cursorrules            # AI development guidelines
 ├── .streamlit/
 │   └── config.toml         # Streamlit theme configuration
 ├── demo_apps/              # Sample applications with security integration
