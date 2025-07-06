@@ -439,7 +439,7 @@ require_portal_access(app_id=123)  # MUST match your app's ID from the portal da
 - **Session management** prevents unauthorized access
 - **Role-based permissions** limit access based on user roles
 - **Input validation** on all user inputs to prevent injection attacks
-- **Secure session cookies** with HttpOnly and SameSite protection
+- **Secure session cookies**
 
 #### Database Security  
 - **Parameterized queries** prevent SQL injection
@@ -529,7 +529,6 @@ We welcome contributions! Here's how to get involved:
 - Consider backwards compatibility and security implications
 
 ### Code Contributions
-- Follow the `.cursorrules` development guidelines
 - Write tests for new features
 - Update documentation for changes
 - Use consistent code style and commenting
