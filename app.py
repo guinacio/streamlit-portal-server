@@ -52,25 +52,44 @@ def login_page():
             submit_button = st.form_submit_button("🔐 Login", use_container_width=True)
             
         if submit_button:
+            # Check credentials
             if username and password:
-                user = db.authenticate_user(username, password)
-                if user:
-                    # Create portal session and set secure cookie
-                    portal_session_token = db.create_portal_session(user['id'])
+                user_info = db.authenticate_user(username, password)
+                if user_info:
+                    # Create portal session
+                    portal_session_token = db.create_portal_session(user_info['id'])
                     
-                    # Store both user info and portal session in session state
-                    st.session_state.user = user
+                    # Set session state
+                    st.session_state.user = {
+                        'id': user_info['id'],
+                        'username': user_info['username'],
+                        'full_name': user_info['full_name'],
+                        'email': user_info['email'],
+                        'role': user_info['role']
+                    }
                     st.session_state.portal_session_token = portal_session_token
                     
-                    # Set simple session cookie (used for session restoration in portal only)
+                    # Set session cookie (used for session restoration in portal only)
+                    server_ip = get_server_ip()
                     components.html(f"""
                     <script>
-                        // Set portal session cookie for portal session restoration
+                        // Set portal session cookie using server IP domain
+                        var serverIP = "{server_ip}";
+                        
+                        // Set cookie with server IP domain to match app links
+                        document.cookie = "portal_session={portal_session_token}; domain=" + serverIP + "; path=/; max-age=86400; SameSite=Lax";
+                        
+                        // Also set without domain as fallback
                         document.cookie = "portal_session={portal_session_token}; path=/; max-age=86400; SameSite=Lax";
                     </script>
                     """, height=0)
                     
-                    st.success("Login successful!")
+                    container = st.empty()
+                    # Wait for cookie to be available
+                    while not st.context.cookies.get("portal_session"):
+                        container.status("🔄 Setting up session...")
+                        st.rerun()
+                    container.status("✅ Login successful! Redirecting...")
                     st.rerun()
                 else:
                     st.error("Invalid username or password")
@@ -557,7 +576,55 @@ def main_dashboard():
             """)
 
 def main():
-    """Main application logic"""
+    """Main application function"""
+    
+    # CRITICAL: Block localhost access entirely for cookie consistency
+    # This ensures cookies work properly across portal and proxy
+    try:
+        # Check if accessed via localhost using st.context.url
+        current_url = st.context.url
+        
+        # Check if user is accessing via localhost or 127.0.0.1
+        if ("localhost" in current_url or "127.0.0.1" in current_url):
+            
+            # Get server IP
+            server_ip = get_server_ip()
+            
+            # Only block if we can get a valid server IP and it's not localhost
+            if server_ip and server_ip != "localhost" and server_ip != "127.0.0.1":
+                # Block access entirely with clear message
+                st.error("🚫 **Localhost Access Blocked**")
+                st.warning("""
+                **Why?** Apps won't work properly when accessed via localhost due to cookie domain restrictions.
+                
+                **Solution:** Use the IP version of the portal for full functionality.
+                """)
+                
+                # Create the IP version URL - always use port 8501
+                ip_url = f"http://{server_ip}:8501"
+                
+                st.info(f"**Click the link below to access the portal:**")
+                
+                col1, col2 = st.columns([1, 2])
+                with col1:
+                    st.page_link(ip_url, label="🌐 Access Portal via IP", icon="🔗")
+                with col2:
+                    st.code(ip_url)
+                
+                st.markdown("---")
+                st.markdown("*This restriction ensures all apps work properly with secure authentication.*")
+                
+                # STOP execution here - don't show the portal
+                st.stop()
+    except:
+        # If check fails, continue normally
+        pass
+    
+    # Initialize session state
+    if 'initialized' not in st.session_state:
+        st.session_state.initialized = True
+        st.session_state.last_session_check = datetime.now()
+    
     # Try to restore session from cookie if not logged in
     if 'user' not in st.session_state:
         # Check for portal session cookie using Streamlit's built-in cookie access
@@ -577,24 +644,56 @@ def main():
                 }
                 st.session_state.portal_session_token = portal_session_token
                 st.rerun()
+            else:
+                # Clear invalid cookie by setting expired cookie
+                server_ip = get_server_ip()
+                components.html(f"""
+                <script>
+                    // Clear invalid portal session cookie
+                    var serverIP = "{server_ip}";
+                    
+                    // Clear with server IP domain (primary)
+                    document.cookie = "portal_session=; domain=" + serverIP + "; path=/; max-age=0; SameSite=Lax";
+                    
+                    // Clear with no explicit domain (fallback)
+                    document.cookie = "portal_session=; path=/; max-age=0; SameSite=Lax";
+                </script>
+                """, height=0)
+        else:
+            # No portal session cookie found, show login form
+            pass
     
-    # If user is logged in, validate their session periodically
-    if 'user' in st.session_state and 'portal_session_token' in st.session_state:
-        # Check if session is still valid (only check occasionally to avoid performance issues)
-        if 'last_session_check' not in st.session_state:
-            st.session_state.last_session_check = datetime.now()
+    # Check if portal session is still valid periodically
+    if ('user' in st.session_state and 
+        hasattr(st.session_state, 'portal_session_token') and
+        st.session_state.portal_session_token):
         
-        # Check session validity every 5 minutes
-        time_since_check = (datetime.now() - st.session_state.last_session_check).total_seconds()
-        if time_since_check > 300:  # 5 minutes
+        # Check every 30 seconds
+        if (not hasattr(st.session_state, 'last_session_check') or 
+            (datetime.now() - st.session_state.last_session_check).total_seconds() > 30):
+            
+            # Validate current portal session
             user_info = db.validate_portal_session(st.session_state.portal_session_token)
             if not user_info:
-                # Session expired, clear user data
-                if 'user' in st.session_state:
-                    del st.session_state.user
-                if 'portal_session_token' in st.session_state:
-                    del st.session_state.portal_session_token
-                st.rerun()
+                # Session expired, create new one
+                new_portal_session_token = db.create_portal_session(st.session_state.user['id'])
+                st.session_state.portal_session_token = new_portal_session_token
+                
+                # Update the cookie with the new session token
+                server_ip = get_server_ip()
+                components.html(f"""
+                <script>
+                    // Update portal session cookie with new token
+                    var serverIP = "{server_ip}";
+                    
+                    // Set cookie with server IP domain to match app links
+                    document.cookie = "portal_session={new_portal_session_token}; domain=" + serverIP + "; path=/; max-age=86400; SameSite=Lax";
+                    
+                    // Also set without domain as fallback
+                    document.cookie = "portal_session={new_portal_session_token}; path=/; max-age=86400; SameSite=Lax";
+                </script>
+                """, height=0)
+                
             else:
                 # Update last check time
                 st.session_state.last_session_check = datetime.now()
