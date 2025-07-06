@@ -236,7 +236,7 @@ The Streamlit Portal uses a multi-component architecture that ensures secure, sc
 ### Application Flow
 The following sequence diagram illustrates the complete user journey from login to secure app access:
 
-![Sequence Diagram](images/sequence_diagram.png)
+![Sequence Diagram](images/sequence_diagram.svg)
 
 ### Key Security Checkpoints
 1. **Authentication**: User login with bcrypt password validation
