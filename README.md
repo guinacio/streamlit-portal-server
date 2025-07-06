@@ -225,6 +225,27 @@ Navigate to **Admin Panel → Groups & Permissions**
 
 ## Architecture
 
+### System Overview
+The Streamlit Portal uses a multi-component architecture that ensures secure, scalable application management:
+
+- **Portal Server** (Port 8501): Main application for user management and authentication
+- **Proxy Server** (Port 8000): Secure app access with session validation
+- **Database Layer**: SQLite database for user data and session management
+- **Streamlit Applications** (Port 8502+): Individual apps with integrated security
+
+### Application Flow
+The following sequence diagram illustrates the complete user journey from login to secure app access:
+
+![Sequence Diagram](images/sequence_diagram.png)
+
+### Key Security Checkpoints
+1. **Authentication**: User login with bcrypt password validation
+2. **Session Management**: Secure cookie-based session tracking
+3. **Permission Validation**: Group-based app access control
+4. **Token Generation**: Single-use access tokens with session binding
+5. **Proxy Validation**: Multi-layer security verification
+6. **App Protection**: Individual app security with ID validation
+
 ## Network Configuration
 
 ### Multi-User Network Setup
