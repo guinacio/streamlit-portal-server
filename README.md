@@ -362,14 +362,6 @@ Test the portal with multiple Streamlit applications:
    - Create user groups and set permissions
    - Test access with different user accounts
 
-### Development Guidelines
-The project includes `.cursorrules` file with comprehensive development guidelines:
-- **Multi-line editing**: Always use `edit_file` tool for multi-line changes
-- **File encoding**: UTF-8 without BOM, consistent line endings
-- **Code quality**: PEP 8 compliance, type hints, error handling
-- **Performance**: Caching strategies, efficient database queries
-- **Security**: Input validation, SQL injection prevention
-
 ## Security Features
 
 ### Enterprise-Grade Security
